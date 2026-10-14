@@ -2,7 +2,21 @@
 
 本教程通过一步步实现一个可运行的 Python Runtime，彻底理解 Cordis 的核心机制，并最终复现 DeepSeek Harness vendored Cordis 运行栈的可移植概念、生命周期语义、公共接口和功能能力。目标范围不仅包括 `@deepseek-ai/cordis` 4.0.2 Core，还包括 Loader、Include、HMR 和 Timer 插件，并以一个最小 Harness 验证整套组件可以协同运行、稳定更新和完整退出。
 
-教程不是正式源码的逐行注释，也不是只展示 Cordis-py 的使用方法。我们会从一个只能挂载函数插件的最小 Runtime 出发，不断加入资源清理、服务反射、响应式依赖、生命周期状态机、事件系统和并发保护。每一步先面对一个真实问题，再把实现演化到 [`src/cordis`](../src/cordis) 当前采用的设计。
+教程不是正式源码的逐行注释，也不是只展示 Cordis-py 的使用方法。我们会从一个只能挂载函数插件的最小 Runtime 出发，不断加入资源清理、服务反射、响应式依赖、生命周期状态机、事件系统和并发保护。每一步先面对一个真实问题，再把实现演化到 [`src/cordis`](../cordis-py/src/cordis) 当前采用的设计。
+
+## 当前进度
+
+本仓库正在重组：原 root 的 Python 项目已整体移动到 [`cordis-py/`](../cordis-py)，教程正文中的“正式实现”链接均指向该目录。
+
+- 00–21 章已编写：每章包含若干编号 Markdown 正文，以及自包含的 `src/chapterNN.py` 和 `src/test_chapterNN.py`；第 00–20 章的代码只依赖标准库和 pytest，第 21 章额外使用项目已锁定的 PyYAML（仅 `safe_load`）；所有章节都不跨章 import、不 import `cordis`。章节级 `README.md` 占位文件已全部删除；
+- 16 章建立跨语言证据管线（场景 schema、归一化、可注入 runner、expected check、双侧比较与 diff、版本门禁），并把真实状态写成台账：Python oracle 的 `004`–`024` 为单边 21/21 通过，pinned TypeScript 4.0.2 build 未运行，`001`–`003` 是 host 形状、不参与 Core 判定；
+- 17 章实现最小 Loader：`ParsedEntry`/`Entry`、format-neutral parser、映射式 `ModuleResolver`、mount/update/replace 事务与 `ConfigReloader`，并说明为什么依赖顺序不属于 Loader；
+- 18 章以 `ConfigComposer` 实现 mapping adapter 边界、相对路径递归 include、循环检测、来源归属与按 entry id 的 overlay，且组合失败不扰动运行中的树；
+- 19 章把 Timer 写成**教程定义的候选契约**（`cordis-py` 目前没有 Timer 资产）：`ManualClock` 可控时钟、`timeout`/`interval`/可取消 `sleep`/`throttle`/`debounce`，句柄全部归调用方 Fiber 的 Effect，并明确 callback 失败、取消与重启/新 epoch 的语义；
+- 20 章把 host-driven HMR 写成**教学候选契约**（正式实现只有 `ConfigReloader.start()/reload()`，没有 watcher、没有模块缓存刷新）：宿主喂入 `ChangeEvent`、Timer debounce 合并 burst、配置变化优先 config update、结构或模块变化走 candidate replacement，候选失败时保留或恢复 previous generation；
+- 21 章是最小 Harness 整栈毕业项目：自包含 Context/Effect/Fiber、YAML `include` 配置组合、Loader 挂载整棵树（不手工排序）、Timer 驱动 heartbeat、host-driven HMR 替换 provider，并验证请求结果、短暂 `PENDING`、旧资源只清理一次、故障回滚与恢复、根 Context 关闭后所有计数器归零；
+- 教程章节测试需要 Python 3.11+ 和 pytest；第 00–21 章的 `src/test_chapterNN.py` 已**逐章**运行（Python 3.12.13，`PYTHONDONTWRITEBYTECODE=1`，`pytest -p no:cacheprovider`，每章从自己的 `src/` 目录运行）：共 184 项教学测试通过，其中 00–15 为 126 项、16–18 为 30 项、19 为 10 项、20 为 10 项、21 为 8 项。第 16–18 章的 6 个 Python 文件，以及第 19–21 章的全部 12 个 Python 文件（含 `src/plugins/*.py` 与 `src/run.py`），另外通过 `ruff check --target-version py311 --no-cache` 与 `ruff format --check --no-cache`（**在仓库根目录**对文件列表运行，与 16–18 章已记录的口径一致）。提示：ruff 的 isort 分组会按 cwd 推断 project root，因此在章的 `src/` 目录内单独运行时，16–21 章的测试文件都会报 I001（`chapterNN` 被当作 first-party）；这是仓库既有的口径差异，不是代码缺陷。
+- 教程测试是**独立的教学测试**，不计入正式实现的验证结论。[`cordis-py/`](../cordis-py) 的验证事实仍以原有记录为准（2026-10-14：正式 Python suite 76 项测试通过，lint/format/类型检查/打包通过，场景 004–024 的 Python oracle 全部通过；pinned TypeScript reference oracle **未验证**；Timer 与 HMR 是教学候选契约，第 19–21 章不更新其 Phase 0–5 结论）。
 
 ## 教程目标
 
@@ -43,11 +57,13 @@
 | Timer | `@deepseek-ai/cordis-plugin-timer` 1.1.2 | 提供随 Fiber 自动释放的 timeout、interval、sleep、throttle 和 debounce。 |
 | HMR | `@deepseek-ai/cordis-plugin-hmr` 1.0.15 | 监视配置和模块变化，经过 Loader 事务安全替换运行中的插件。 |
 
-DeepSeek Harness 的完整 LLM、Agent、Tools、Session 等业务实现仍不属于复现范围。教程最后只构建一个小型、无网络、无密钥的 Harness，用来验证 Cordis 运行栈，而不是复制 DSH 产品功能。
+第 17–21 章按这张表推进，但**教程完成不等于组件等价**：正式 `cordis-py` 只有 Loader、include 展开与 host-driven `ConfigReloader`，Timer 目前**零资产**，HMR 也没有 watcher 与模块缓存刷新。因此第 19、20 章以及第 21 章的对应部分是教程定义的**候选契约（candidate contract）**，用来固定"若进入正式实现应当满足哪些可观察行为"，不是 DSH Timer 1.1.2 或 HMR 1.0.15 的等价证据。
 
-Core 已有逐项对等证据；Loader、Include、HMR 和 Timer 必须分别完成新的 API inventory、语言差异表和双语言行为场景后，才能宣称对应组件等价。当前 Python Loader、include 展开和 host-driven reload 只能作为实现基础，不能直接视为四个 DSH 插件已经完整复现。
+DeepSeek Harness 的完整 LLM、Agent、Tools、Session 等业务实现仍不属于复现范围。教程最后只构建一个小型、无网络、无密钥、无真实 LLM 的 Harness，用来验证 Cordis 运行栈，而不是复制 DSH 产品功能。
 
-对照版本、逐项接口分类和语言差异见 [`docs/cordis-core-compatibility.md`](../docs/cordis-core-compatibility.md)。
+Core 已有逐项对等证据；Loader、Include、HMR 和 Timer 必须分别完成新的 API inventory、语言差异表和双语言行为场景后，才能宣称对应组件等价。当前 Python Loader、include 展开和 host-driven reload 只能作为实现基础，不能直接视为四个 DSH 插件已经完整复现；第 19–21 章也不更新 `cordis-py` 的 Phase 0–5 验证结论。
+
+对照版本、逐项接口分类和语言差异见 [`docs/cordis-core-compatibility.md`](../cordis-py/docs/cordis-core-compatibility.md)。
 
 ## 教学方法
 
@@ -57,7 +73,7 @@ Core 已有逐项对等证据；Loader、Include、HMR 和 Timer 必须分别完
 
 ### 2. 教学实现可以演进，正式实现保持唯一
 
-每个阶段保留独立、可运行的教学代码，使读者能看到设计如何变化。阶段之间允许少量代码重复，但这些重复只存在于 `Tutorial`。正式 Runtime 始终以 [`src/cordis`](../src/cordis) 为唯一实现，不为了迁就教程增加兼容层或重复机制。
+每个阶段保留独立、可运行的教学代码，使读者能看到设计如何变化。阶段之间允许少量代码重复，但这些重复只存在于 `Tutorial`。正式 Runtime 始终以 [`src/cordis`](../cordis-py/src/cordis) 为唯一实现，不为了迁就教程增加兼容层或重复机制。
 
 ### 3. 先建立语义，再对照最终源码
 
@@ -245,27 +261,29 @@ Context 是入口，Fiber 是生命周期主体，Effect 是资源所有权机�
 - 对比 TypeScript 与 Python 的规范化结果；
 - 检查正常路径、失败路径和竞态路径；
 - 阅读完整兼容矩阵；
-- 从教学 Runtime 过渡到正式 [`src/cordis`](../src/cordis)。
+- 从教学 Runtime 过渡到正式 [`src/cordis`](../cordis-py/src/cordis)。
 
 阶段成果：完成一个概念、语义、接口和能力上与 DSH Cordis Core 对等的 Python 实现，并能解释每一个重要设计选择的来源。
 
-### 第五阶段：完整 Cordis 运行栈
+### 第五阶段：教程内的候选契约整栈闭环
+
+这一阶段的目标是在教程内把运行栈闭环跑通，**不代表正式 `cordis-py` 已经实现 Timer 和 HMR**：正式实现只有 Loader、include 展开和 host-driven `ConfigReloader`，第 19–21 章的 Timer/HMR 是教学候选契约。
 
 #### 17 — Loader：从配置到插件树
 
-- 对照 DSH Loader 的 Entry、EntryGroup、EntryTree、Loader 和 ModuleLoader 契约；
+- 对照当前 Python Loader 的真实契约：`ParsedEntry`、`Entry`、`ConfigParser`/`TomlConfigParser`、`ModuleResolver`、`Loader`、`ConfigReloader`；`EntryGroup`、`EntryTree`、`ModuleLoader` 在正式实现中不存在，不作为对照目标；
 - 把声明式配置解析为稳定 identity 的 Entry 树；
 - 所有插件只通过 `Context.plugin()` 挂载，不建立第二套依赖排序；
 - 区分 config-only update 和 structural replacement；
 - 更新失败时回滚到上一棵有效运行树；
-- 对照当前 [`src/cordis/loader`](../src/cordis/loader) 并补齐差异。
+- 对照当前 [`src/cordis/loader`](../cordis-py/src/cordis/loader) 并补齐差异。
 
 #### 18 — Include：组合配置来源
 
-- 展开 YAML、TOML 或其他受支持配置来源；
+- 通过 mapping adapter 展开 TOML/JSON（YAML 由项目已锁定的 PyYAML adapter 负责），`ConfigComposer` 只接收 mapping；
 - 正确解析嵌套 include 的相对路径；
 - 保留每个 Entry 的源文件归属和错误位置；
-- 支持 DSH Include 对应的 patch/overlay 行为；
+- 支持按 entry id 的 overlay/patch，并明确不虚构 index patch 或 DSH Include 完整等价（`ConfigComposer` 是 Python 扩展，兼容矩阵排除 Include）；
 - 检测 include cycle，失败时不扰动当前 Runtime；
 - 使用跨文件场景验证组合顺序和更新传播。
 
@@ -303,7 +321,7 @@ Context 是入口，Fiber 是生命周期主体，Effect 是资源所有权机�
 
 ## 目录约定
 
-计划中的目录结构如下：
+计划中的目录结构如下（00–21 现已全部编写完成）：
 
 ```text
 Tutorial/
@@ -316,9 +334,6 @@ Tutorial/
 │   └── src/
 │       ├── chapter00.py
 │       └── test_chapter00.py
-├── 01-context/
-│   ├── README.md  # 尚未开始时的占位文件
-│   └── ...
 ├── ...
 ├── 16-cordis-core-compatibility/
 ├── 17-loader/
@@ -326,17 +341,22 @@ Tutorial/
 ├── 19-timer/
 ├── 20-hmr/
 └── 21-mini-harness/
-    ├── 01-boot.md
-    ├── 02-update-and-recovery.md
-    ├── 03-shutdown-verification.md
+    ├── 01-boot-the-stack.md
+    ├── 02-update-pending-and-recovery.md
+    ├── 03-shutdown-and-boundaries.md
     ├── config/
+    │   ├── cordis.yaml
+    │   ├── infra.yaml
+    │   ├── consumer.yaml
+    │   └── provider.yaml
     └── src/
         ├── plugins/
+        ├── chapter21.py
         ├── run.py
-        └── test_harness.py
+        └── test_chapter21.py
 ```
 
-尚未开始的章节可以保留一个简短的 `README.md` 占位文件。一旦正式编写该章，就删除占位文件，正文按阅读顺序拆成编号 Markdown 小节，所有 Python 代码统一放入该章的 `src/`。
+所有章节都已完成，目录里不再保留章节级 `README.md` 占位文件；正文按阅读顺序拆成编号 Markdown 小节，Python 代码统一放入该章的 `src/`。
 
 正式章节包含若干编号 Markdown 和一个 `src/`。Markdown 的数量不预设：简单章节可以只有一个文件，复杂章节可以有十个以上。只有当主题、实践目标或 checkpoint 能独立成立时才拆文件；两个连续步骤必须放在一起才能理解时就合并。
 
@@ -411,7 +431,7 @@ Checkpoint 只放在值得停下来运行和总结的位置，例如：
 
 关键失败测试必须同时验证异常和最终资源状态。例如，cleanup 抛出异常时，不只检查异常类型，还要确认其他 disposer 已执行、Fiber 已进入终态、Registry 已移除记录。
 
-正式项目已有的 Core 对照 runner 位于 [`tests/compat`](../tests/compat)，可以在后半程作为参考和验收工具。扩展组件不能只依赖 Core 场景，需要为 Loader、Include、Timer 和 HMR 增加各自的参考 runner 或可规范化行为场景。
+正式项目已有的 Core 对照 runner 位于 [`tests/compat`](../cordis-py/tests/compat)，可以在后半程作为参考和验收工具。扩展组件不能只依赖 Core 场景，需要为 Loader、Include、Timer 和 HMR 增加各自的参考 runner 或可规范化行为场景。
 
 ## 与正式源码的关系
 
@@ -419,19 +439,19 @@ Checkpoint 只放在值得停下来运行和总结的位置，例如：
 
 | 教学概念 | 正式实现 |
 | --- | --- |
-| Context 与派生作用域 | [`src/cordis/context.py`](../src/cordis/context.py) |
-| Effect 与资源收集 | [`src/cordis/effect.py`](../src/cordis/effect.py) |
-| Fiber 状态机与 epoch | [`src/cordis/fiber.py`](../src/cordis/fiber.py) |
-| PluginRuntime 与 Registry | [`src/cordis/registry.py`](../src/cordis/registry.py) |
-| Inject 元数据 | [`src/cordis/model.py`](../src/cordis/model.py) |
-| 服务解析、隔离和 accessor | [`src/cordis/reflect.py`](../src/cordis/reflect.py) |
-| Service 调用方绑定 | [`src/cordis/service.py`](../src/cordis/service.py) |
-| 五种事件分发模式 | [`src/cordis/events.py`](../src/cordis/events.py) |
-| Logger 与 Exporter | [`src/cordis/logger.py`](../src/cordis/logger.py) |
-| 公共错误与配置验证 | [`src/cordis/errors.py`](../src/cordis/errors.py)、[`src/cordis/config.py`](../src/cordis/config.py) |
-| Loader、Include 与配置事务 | [`src/cordis/loader`](../src/cordis/loader) |
-| Timer | 待实现并与 DSH Timer 1.1.2 对照 |
-| HMR 文件监视与模块替换 | 当前只有 host-driven reload 基础，待按 DSH HMR 1.0.15 补齐 |
+| Context 与派生作用域 | [`src/cordis/context.py`](../cordis-py/src/cordis/context.py) |
+| Effect 与资源收集 | [`src/cordis/effect.py`](../cordis-py/src/cordis/effect.py) |
+| Fiber 状态机与 epoch | [`src/cordis/fiber.py`](../cordis-py/src/cordis/fiber.py) |
+| PluginRuntime 与 Registry | [`src/cordis/registry.py`](../cordis-py/src/cordis/registry.py) |
+| Inject 元数据 | [`src/cordis/model.py`](../cordis-py/src/cordis/model.py) |
+| 服务解析、隔离和 accessor | [`src/cordis/reflect.py`](../cordis-py/src/cordis/reflect.py) |
+| Service 调用方绑定 | [`src/cordis/service.py`](../cordis-py/src/cordis/service.py) |
+| 五种事件分发模式 | [`src/cordis/events.py`](../cordis-py/src/cordis/events.py) |
+| Logger 与 Exporter | [`src/cordis/logger.py`](../cordis-py/src/cordis/logger.py) |
+| 公共错误与配置验证 | [`src/cordis/errors.py`](../cordis-py/src/cordis/errors.py)、[`src/cordis/config.py`](../cordis-py/src/cordis/config.py) |
+| Loader、Include 与配置事务 | [`src/cordis/loader`](../cordis-py/src/cordis/loader) |
+| Timer | 正式实现中**无对应资产**；第 19 章是教程定义的候选契约，见 [`19-timer/`](19-timer/) |
+| HMR 文件监视与模块替换 | 正式实现只有 host-driven [`loader/reloader.py`](../cordis-py/src/cordis/loader/reloader.py)；第 20–21 章的 watcher/debounce/候选替换是教学候选契约，未进入正式实现 |
 
 正式源码是最终答案，但教程负责展示这个答案如何从约束和失败场景中一步步推导出来。
 
@@ -475,8 +495,10 @@ Checkpoint 只放在值得停下来运行和总结的位置，例如：
 3. 完成 09–11，用确定性竞态测试强化生命周期正确性；
 4. 完成 12–15，补齐 Cordis Core 的公共能力；
 5. 完成 16，对照 Core 的全部兼容证据并回归正式源码；
-6. 完成 17–20，分别复现并验收 Loader、Include、Timer 和 HMR；
+6. 完成 17–20：Loader 与 include 对照当前 Python 扩展实现并验收；Timer 与 HMR 按教学候选契约实现并验收；
 7. 最后完成 21，通过最小 Harness 执行整栈稳定性验收。
+
+00–21 已全部完成。第 19–21 章补齐的是教程侧的候选契约与整栈证明；把 Timer 或 HMR 提升为正式能力仍需要各自的 API inventory、语言差异表和双语言行为场景。
 
 第一阶段完成后应复审章节颗粒度。如果单章引入太多状态或超过一个核心问题，应拆分章节，而不是压缩解释。
 
@@ -492,7 +514,7 @@ Checkpoint 只放在值得停下来运行和总结的位置，例如：
 - 所有正式 Core 模块都能从教程章节追溯其设计来源；
 - 所有 Python 语言差异都有理由和能力对应；
 - 最终教学 Runtime 的行为能够通过选定的 DSH Cordis Core 对照场景；
-- Loader、Include、Timer 和 HMR 各自具有来源固定的 API inventory 和行为证据；
+- Loader 与 include 有现有 Python 实现作为对照锚点；Timer 与 HMR 有来源固定的教学候选契约和可运行的章节行为证据；把任一扩展组件升级为“已等价复现”，仍需未来补齐 API inventory、语言差异表和双语言行为场景；
 - 最小 Harness 能从多文件配置冷启动并处理真实的依赖无序挂载；
 - provider 配置或代码更新后，consumer 按依赖 epoch 正确卸载和恢复；
 - 无效配置、导入失败和激活失败不会破坏上一棵有效运行树；
@@ -500,3 +522,10 @@ Checkpoint 只放在值得停下来运行和总结的位置，例如：
 - Harness 完整关闭后，Registry、Reflect implementations、Events hooks、Timer tasks、watchers 和根 Effect 全部清空；
 - 整栈测试能够重复运行，并包含启动、稳态、更新、故障、恢复和关闭六个阶段；
 - 读者完成教程后，可以不依赖现有实现重新设计一个语义正确、可配置、可热更新的 Cordis Python Runtime。
+
+### 当前达成情况
+
+- 00–21 章的正文、`src/chapterNN.py` 与 `src/test_chapterNN.py` 全部存在，并逐章通过各自的教学测试；
+- 第 21 章的整栈测试覆盖启动、稳态、更新、故障、恢复、关闭六个阶段，并在关闭后断言所有计数器归零；
+- Timer 与 HMR 的达成标准是“教学候选契约 + 可运行的章节行为证据”，而不是组件等价：正式实现中 Timer 零资产，HMR 只有 host-driven `ConfigReloader`；第 19–21 章提供的是候选契约与教学整栈证明，要升级为“已等价复现”仍需未来的双语言证据；
+- `cordis-py` 的正式结论不因教程更新而改变：Python suite 76 passed，pinned TypeScript reference oracle 仍未验证，Phase 0–5 的验证记录保持原样。

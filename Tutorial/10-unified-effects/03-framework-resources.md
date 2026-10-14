@@ -28,11 +28,11 @@ uv run pytest Tutorial/10-unified-effects/src/test_chapter10.py -k framework
 
 ## 与正式源码对应
 
-- Effect、EffectScope 与 metadata：[`src/cordis/effect.py`](../../src/cordis/effect.py)
-- Context 的资源入口：[`src/cordis/context.py`](../../src/cordis/context.py)
-- Service registration：[`src/cordis/reflect.py`](../../src/cordis/reflect.py)
-- Listener ownership：[`src/cordis/events.py`](../../src/cordis/events.py)
-- Child Fiber ownership：[`src/cordis/fiber.py`](../../src/cordis/fiber.py)
+- Effect、EffectScope 与 metadata：[`src/cordis/effect.py`](../../cordis-py/src/cordis/effect.py)
+- Context 的资源入口：[`src/cordis/context.py`](../../cordis-py/src/cordis/context.py)
+- Service registration：[`src/cordis/reflect.py`](../../cordis-py/src/cordis/reflect.py)
+- Listener ownership：[`src/cordis/events.py`](../../cordis-py/src/cordis/events.py)
+- Child Fiber ownership：[`src/cordis/fiber.py`](../../cordis-py/src/cordis/fiber.py)
 
 ## 与 DSH Cordis 对照
 

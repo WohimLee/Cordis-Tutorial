@@ -68,9 +68,9 @@ Reflect
 
 ## 与正式源码对应
 
-- Reflect、Impl、Property：[`src/cordis/reflect.py`](../../src/cordis/reflect.py)
-- Context 的 `get()`、`provide()`、`isolate()`：[`src/cordis/context.py`](../../src/cordis/context.py)
-- Service availability：[`src/cordis/service.py`](../../src/cordis/service.py)
+- Reflect、Impl、Property：[`src/cordis/reflect.py`](../../cordis-py/src/cordis/reflect.py)
+- Context 的 `get()`、`provide()`、`isolate()`：[`src/cordis/context.py`](../../cordis-py/src/cordis/context.py)
+- Service availability：[`src/cordis/service.py`](../../cordis-py/src/cordis/service.py)
 
 正式 Reflect 还管理 accessor、mixin、internal/get、internal/set、service notification filter 和 caller Context binding。这些内容分别留到 Service 与 Events 章节。
 

@@ -1,0 +1,7 @@
+# The provider is the replaceable part of the stack: its module specifier and its
+# preamble are the two things HMR changes in the chapter.
+plugins:
+  - id: provider
+    module: provider_v1:plugin
+    config:
+      preamble: alpha

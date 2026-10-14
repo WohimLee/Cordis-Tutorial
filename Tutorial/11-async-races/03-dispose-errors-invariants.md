@@ -41,9 +41,9 @@ Effect 用 `setup_done` Event 建立这条顺序。Scope 先标记 closed，因�
 
 ## 与正式源码对应
 
-- setup/dispose 协调与 cleanup 聚合：[`src/cordis/effect.py`](../../src/cordis/effect.py)
-- serialized refresh runner：[`src/cordis/fiber.py`](../../src/cordis/fiber.py)
-- 确定性竞态测试：[`tests/test_fiber_races.py`](../../tests/test_fiber_races.py)
+- setup/dispose 协调与 cleanup 聚合：[`src/cordis/effect.py`](../../cordis-py/src/cordis/effect.py)
+- serialized refresh runner：[`src/cordis/fiber.py`](../../cordis-py/src/cordis/fiber.py)
+- 确定性竞态测试：[`tests/test_fiber_races.py`](../../cordis-py/tests/test_fiber_races.py)
 
 ## 与 DSH Cordis 对照
 

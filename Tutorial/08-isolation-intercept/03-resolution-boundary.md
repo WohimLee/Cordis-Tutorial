@@ -33,10 +33,10 @@ regional = private.intercept("database", {"region": "cn"})
 
 ## 与正式源码对应
 
-- Context 派生、isolate 与 intercept：[`src/cordis/context.py`](../../src/cordis/context.py)
-- name + label 的服务解析：[`src/cordis/reflect.py`](../../src/cordis/reflect.py)
-- Service config merge：[`src/cordis/service.py`](../../src/cordis/service.py)
-- Inject head 进入 activation：[`src/cordis/fiber.py`](../../src/cordis/fiber.py)
+- Context 派生、isolate 与 intercept：[`src/cordis/context.py`](../../cordis-py/src/cordis/context.py)
+- name + label 的服务解析：[`src/cordis/reflect.py`](../../cordis-py/src/cordis/reflect.py)
+- Service config merge：[`src/cordis/service.py`](../../cordis-py/src/cordis/service.py)
+- Inject head 进入 activation：[`src/cordis/fiber.py`](../../cordis-py/src/cordis/fiber.py)
 
 正式实现还会验证配置必须是 string-keyed mapping，并在自定义 merge 不存在时采用浅合并。本章保留相同的可观察顺序。
 

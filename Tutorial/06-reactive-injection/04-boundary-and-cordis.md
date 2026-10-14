@@ -27,10 +27,10 @@ Fiber：现在是否应该激活，以及怎样激活
 
 ## 与正式源码对应
 
-- Inject metadata：[`src/cordis/model.py`](../../src/cordis/model.py)
-- Registry dependency index：[`src/cordis/registry.py`](../../src/cordis/registry.py)
-- Fiber 依赖检查：[`src/cordis/fiber.py`](../../src/cordis/fiber.py)
-- Reflect notification：[`src/cordis/reflect.py`](../../src/cordis/reflect.py)
+- Inject metadata：[`src/cordis/model.py`](../../cordis-py/src/cordis/model.py)
+- Registry dependency index：[`src/cordis/registry.py`](../../cordis-py/src/cordis/registry.py)
+- Fiber 依赖检查：[`src/cordis/fiber.py`](../../cordis-py/src/cordis/fiber.py)
+- Reflect notification：[`src/cordis/reflect.py`](../../cordis-py/src/cordis/reflect.py)
 
 正式实现不会使用本章的公开 watcher。它通过 lifecycle-owned internal events 和 label-filtered notify 连接组件，并处理调用用户 callback 时不能持有全局 Runtime lock 的要求。
 

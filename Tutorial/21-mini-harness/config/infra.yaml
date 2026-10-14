@@ -1,0 +1,10 @@
+# Infrastructure: the stable request entry and the periodic heartbeat.
+plugins:
+  - id: gateway
+    module: gateway:plugin
+    config:
+      name: requests
+  - id: heartbeat
+    module: heartbeat:plugin
+    config:
+      period: 1.0

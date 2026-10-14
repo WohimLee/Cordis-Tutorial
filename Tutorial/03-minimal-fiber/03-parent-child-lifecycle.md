@@ -91,9 +91,9 @@ root Context
 
 ## 与正式源码对应
 
-- Context 与 Fiber 连接：[`src/cordis/context.py`](../../src/cordis/context.py)
-- Fiber Lifecycle：[`src/cordis/fiber.py`](../../src/cordis/fiber.py)
-- Effect 所有权：[`src/cordis/effect.py`](../../src/cordis/effect.py)
+- Context 与 Fiber 连接：[`src/cordis/context.py`](../../cordis-py/src/cordis/context.py)
+- Fiber Lifecycle：[`src/cordis/fiber.py`](../../cordis-py/src/cordis/fiber.py)
+- Effect 所有权：[`src/cordis/effect.py`](../../cordis-py/src/cordis/effect.py)
 
 正式实现需要处理依赖 Epoch、失败恢复、restart、update、诊断 metadata 和更多竞态。本章只建立所有后续能力依赖的最小所有权闭环。
 

@@ -68,9 +68,9 @@ Registry
 
 ## 与正式源码对应
 
-- Plugin metadata 与 Inject 类型：[`src/cordis/model.py`](../../src/cordis/model.py)
-- Registry 与 PluginRuntime：[`src/cordis/registry.py`](../../src/cordis/registry.py)
-- Fiber 使用 Runtime callback：[`src/cordis/fiber.py`](../../src/cordis/fiber.py)
+- Plugin metadata 与 Inject 类型：[`src/cordis/model.py`](../../cordis-py/src/cordis/model.py)
+- Registry 与 PluginRuntime：[`src/cordis/registry.py`](../../cordis-py/src/cordis/registry.py)
+- Fiber 使用 Runtime callback：[`src/cordis/fiber.py`](../../cordis-py/src/cordis/fiber.py)
 
 正式实现还要读取 Plugin 的 `name`、`Config`、`inject`、`provide` 和 `intercept` metadata，并通过内部事件允许 Loader 关联 Entry。本章只处理 shape、identity 和多 Fiber 记录。
 

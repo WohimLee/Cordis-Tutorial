@@ -1,0 +1,7 @@
+# The consumer declares what it needs and waits for it; it is listed before the
+# provider it depends on.
+plugins:
+  - id: consumer
+    module: consumer:plugin
+    config:
+      label: agent

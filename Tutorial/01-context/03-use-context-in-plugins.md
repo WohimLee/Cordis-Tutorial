@@ -113,7 +113,7 @@ child.plugin(plugin)
 
 ## 与正式源码对应
 
-正式实现见 [`src/cordis/context.py`](../../src/cordis/context.py)。本章只复现其中最基础的作用域行为：Context identity、root、`extend(meta)` 和从 Context 调用 Plugin。
+正式实现见 [`src/cordis/context.py`](../../cordis-py/src/cordis/context.py)。本章只复现其中最基础的作用域行为：Context identity、root、`extend(meta)` 和从 Context 调用 Plugin。
 
 正式实现还会把 `events`、`logger`、`reflect` 和 `registry` 绑定到每个 Context，并让派生 Context 保留正确的调用方信息。这些内容会在对应章节中出现。
 

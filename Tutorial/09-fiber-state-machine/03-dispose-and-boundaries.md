@@ -34,10 +34,10 @@ def listener(fiber, old_state):
 
 ## 与正式源码对应
 
-- Fiber 状态与 lifecycle runner：[`src/cordis/fiber.py`](../../src/cordis/fiber.py)
-- Plugin config validation：[`src/cordis/config.py`](../../src/cordis/config.py)
-- 生命周期内部事件：[`src/cordis/events.py`](../../src/cordis/events.py)
-- Registry 删除 Fiber：[`src/cordis/registry.py`](../../src/cordis/registry.py)
+- Fiber 状态与 lifecycle runner：[`src/cordis/fiber.py`](../../cordis-py/src/cordis/fiber.py)
+- Plugin config validation：[`src/cordis/config.py`](../../cordis-py/src/cordis/config.py)
+- 生命周期内部事件：[`src/cordis/events.py`](../../cordis-py/src/cordis/events.py)
+- Registry 删除 Fiber：[`src/cordis/registry.py`](../../cordis-py/src/cordis/registry.py)
 
 ## 与 DSH Cordis 对照
 

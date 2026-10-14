@@ -1,0 +1,15 @@
+# Root composition for the chapter 21 mini harness.
+#
+# The consumer is included before the provider on purpose: the Loader mounts the
+# forest in declaration order and the dependency scheduler -- not a manual sort --
+# decides when the consumer becomes active.
+include:
+  - infra.yaml
+  - consumer.yaml
+  - provider.yaml
+
+# Overlays are addressed by entry id and deep-merge into the declared config.
+overlays:
+  heartbeat:
+    config:
+      period: 0.5

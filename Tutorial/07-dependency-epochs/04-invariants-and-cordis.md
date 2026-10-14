@@ -25,9 +25,9 @@ Impl identity tuple 直接表达 Fiber 实际使用的依赖：
 
 ## 与正式源码对应
 
-- Fiber dependency epoch 和 runner：[`src/cordis/fiber.py`](../../src/cordis/fiber.py)
-- Impl identity 与 strict resolution：[`src/cordis/reflect.py`](../../src/cordis/reflect.py)
-- dependent Fiber 索引：[`src/cordis/registry.py`](../../src/cordis/registry.py)
+- Fiber dependency epoch 和 runner：[`src/cordis/fiber.py`](../../cordis-py/src/cordis/fiber.py)
+- Impl identity 与 strict resolution：[`src/cordis/reflect.py`](../../cordis-py/src/cordis/reflect.py)
+- dependent Fiber 索引：[`src/cordis/registry.py`](../../cordis-py/src/cordis/registry.py)
 
 正式实现比本章教学版多出失败状态、配置更新、Effect tree、内部 Lifecycle events 和更完整的取消/错误聚合，但核心原则相同：以 Impl identity 计算 Epoch，并串行完成卸载和激活。
 

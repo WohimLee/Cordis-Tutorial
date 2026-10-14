@@ -34,11 +34,11 @@ Service 改变时，旧 Epoch 清理，新 Epoch 再激活
 
 | 本章对象 | 正式实现 |
 | --- | --- |
-| 传给 Plugin 的共享字典 | [`Context`](../../src/cordis/context.py)，但 Context 不是普通字典 |
-| `mount(plugin)` | `Context.plugin()` 与 [`RegistryService`](../../src/cordis/registry.py) |
-| Plugin 的一次执行 | [`Fiber`](../../src/cordis/fiber.py) 的一个 activation Epoch |
-| 全局 Cleanup 列表 | 每个 Fiber 拥有的 [`Effect`](../../src/cordis/effect.py) 树 |
-| `services[name]` | [`ReflectService`](../../src/cordis/reflect.py) 管理的 Impl |
+| 传给 Plugin 的共享字典 | [`Context`](../../cordis-py/src/cordis/context.py)，但 Context 不是普通字典 |
+| `mount(plugin)` | `Context.plugin()` 与 [`RegistryService`](../../cordis-py/src/cordis/registry.py) |
+| Plugin 的一次执行 | [`Fiber`](../../cordis-py/src/cordis/fiber.py) 的一个 activation Epoch |
+| 全局 Cleanup 列表 | 每个 Fiber 拥有的 [`Effect`](../../cordis-py/src/cordis/effect.py) 树 |
+| `services[name]` | [`ReflectService`](../../cordis-py/src/cordis/reflect.py) 管理的 Impl |
 
 暂时不要深入这些文件。后面的章节会从简单代码开始，一步步得到正式结构。
 

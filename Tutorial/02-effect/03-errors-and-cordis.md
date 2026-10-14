@@ -47,7 +47,7 @@ Effect
 
 ## 与正式源码对应
 
-正式实现位于 [`src/cordis/effect.py`](../../src/cordis/effect.py)。它在本章能力之上还包含：
+正式实现位于 [`src/cordis/effect.py`](../../cordis-py/src/cordis/effect.py)。它在本章能力之上还包含：
 
 - `EffectMeta` 诊断树；
 - nested Effect；
